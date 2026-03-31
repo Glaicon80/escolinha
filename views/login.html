@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Login</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div class="box">
+    <h2>Login</h2>
+    <div id="erroContainer"></div>
+
+    <script>
+      fetch('/mensagem')
+        .then(res => res.json())
+        .then(data => {
+          if (data.mensagem) {
+            const msg = document.createElement("p");
+            msg.textContent = data.mensagem;
+            msg.style.color = "red";
+            document.getElementById("erroContainer").appendChild(msg);
+
+            setTimeout(() => {
+              msg.remove();
+            }, 3000);
+          }
+        });
+    </script>
+
+    <form action="/login" method="POST">
+      <input type="text" name="usuario" placeholder="Usuário" required>
+      <input type="password" name="senha" placeholder="Senha" required>
+      <button type="submit">Entrar</button>
+    </form>
+    <br>
+    <a href="/cadastro">Criar uma conta</a>
+  </div>
+</body>
+</html>
