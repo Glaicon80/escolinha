@@ -1,22 +1,25 @@
 FROM node:18-alpine
 
 # Instala ferramentas úteis
-RUN apk add --no-cache bash curl
+RUN apk add --no-cache curl
 
 # Cria diretório da aplicação
 WORKDIR /app
 
-# Copia apenas os arquivos de dependências (melhor cache)
+# Copia os arquivos de dependências
 COPY package*.json ./
 
-# Instala dependências incluindo devDependencies (nodemon)
+# Instala as dependências
 RUN npm install
 
-# Instala nodemon globalmente (opcional)
+# Instala nodemon globalmente para desenvolvimento
 RUN npm install -g nodemon
 
-# Expõe a porta da aplicação
+# Copia o resto dos arquivos
+COPY . .
+
+# Expõe a porta
 EXPOSE 3000
 
-# Comando padrão para desenvolvimento
-CMD ["npm", "run", "dev"]
+# Comando para iniciar a aplicação com nodemon  - npm run dev - ai vai no scripts do package.json "dev": "nodemon src/server.js"
+CMD ["npm", "run", "dev"]  

@@ -6,6 +6,10 @@ yarn-error.log
 package-lock.json
 yarn.lock
 
+# Testes e cobertura
+coverage/
+.nyc_output/
+
 # Docker volumes
 db_data/
 db_config/

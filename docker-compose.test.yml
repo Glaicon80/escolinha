@@ -1,0 +1,71 @@
+version: '3.8'
+
+services:
+  db-test:
+    image: mysql:8
+    container_name: db-test
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: 1234 # senha do usuario root
+      MYSQL_DATABASE: escolinha_test # ← cria Banco de TESTE 
+      MYSQL_ROOT_HOST: '%'
+    ports:
+      - "3307:3306" # ← Porta DIFERENTE (3307) para não conflitar - Mapeia porta 3307 do host → 3306 do container
+    volumes:
+      - db_test_data:/var/lib/mysql
+    healthcheck: # Healthcheck começa a verificar a saldo - Quando healthcheck passa, MySQL está pronto!
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p1234"]
+      timeout: 20s
+      retries: 10
+      interval: 10s
+      start_period: 30s
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci  # configurações de charset (UTF-8)
+
+  app-test:
+    build: . # ← Constrói imagem a partir do Dockerfile
+    container_name: app-test
+    depends_on:
+      db-test:
+        condition: service_healthy # ← Só cria quando db-test estiver SAUDÁVEL
+    environment:
+      - DB_HOST=db-test # ← Aponta para o container db-test
+      - DB_USER=root
+      - DB_PASSWORD=1234
+      - DB_NAME=escolinha_test # ← Banco de TESTE
+      - NODE_ENV=test # ← Modo teste
+    volumes:
+      - .:/app # (bind mount para código fonte)
+      - /app/node_modules # (volume anônimo)
+    command: npm test # depois que o container iniciar vai executar o Comando que RODA OS TESTES - lê package.json e executa: jest --runInBand
+
+volumes:
+  db_test_data:
+
+
+#1. Container app-test inicia - npm run dev - ai vai no scripts do package.json "dev": "nodemon src/server.js" no dockerfile
+#   ↓
+#2. Executa: npm test
+#   ↓
+#3. npm lê package.json e executa: jest --runInBand
+#   ↓
+#4. Jest carrega configurações do package.json:
+#   - testEnvironment: "node"
+#   - setupFilesAfterEnv: ["./tests/setup.js"]
+#   ↓
+#5. setup.js executa beforeAll:
+#   - Aguarda banco ficar pronto (escolinha_test)
+#   - Cria tabelas se não existirem
+#   - Insere dados de teste
+#   ↓
+#6. Jest executa TODOS os testes:
+#   - "testMatch": ["**/tests/*.test.js"] do package.json
+#   - tests/userService.test.js
+#   - tests/authRoutes.test.js
+#   ↓
+#7. Jest gera relatório de cobertura
+#   ↓
+#8. Testes passam ou falham
+#   ↓
+#9. Processo Node.js encerra (exit code 0 = sucesso, 1 = falha)
+
+# OBS: o comando command: npm test vai sobrescrever o comando  CMD ["npm", "run", "dev"] do dockerfile. no teste o servidor não precisa subir, não precisa app.listen(PORT

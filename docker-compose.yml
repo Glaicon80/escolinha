@@ -1,69 +1,69 @@
-version: '3.8'
+version: '3.8' # Versão do formato do Docker Compose
 
-services:
-  app:
-    build: .
-    container_name: app
+services: # Define os containers (serviços)
+  app: # Serviço 1: Aplicação Node.js
+    build: . # Usa o Dockerfile na pasta local
+    container_name: app # Nome do container (em vez de nome automático)
     ports:
-      - "3000:3000"
-    depends_on:
+      - "3000:3000" # porta HOST : porta CONTAINER
+    depends_on:  #Ordem de inicialização
       db:
-        condition: service_healthy
+        condition: service_healthy # Só inicia o container app quando o db estiver saudável, vai esperar não só o container do banco ficar pronto mas tbm vai esperar que o banco fique pronto para depois rodar o container app
     environment:
-      - DB_HOST=db
-      - DB_USER=root
-      - DB_PASSWORD=1234
-      - DB_NAME=escolinha
-      - NODE_ENV=development
-    volumes:
-      - .:/app
-      - /app/node_modules
-    networks:
+      - DB_HOST=db # Nome do container do banco
+      - DB_USER=root # Usuário do banco
+      - DB_PASSWORD=1234 # Senha
+      - DB_NAME=escolinha  # Nome do banco
+      - NODE_ENV=development # Ambiente de desenvolvimento
+    volumes: # Montagem de diretórios
+      - .:/app # Bind mount - conecta pasta local ao container, sincroniza as modificações entre a pastas local do projeto (presentada por um pto) e a pasta app dentro do container
+      - /app/node_modules # Volume anônimo (não sobrescreve), ou seja a pasta node_modules da pasta do pc não vai sobrescrever a pasta node_modules do container
+    networks: #Rede para comunicação
       - escolinha_network
-    restart: unless-stopped
+    restart: unless-stopped # Política de reinicialização - Não reinicia se você parar manualmente
 
-  db:
-    image: mysql:8
-    container_name: db
-    restart: always
-    environment:
-      MYSQL_ROOT_PASSWORD: 1234
-      MYSQL_DATABASE: escolinha
-      MYSQL_ROOT_HOST: '%'
+  db: # Serviço 2: Banco de dados MySQL
+    image: mysql:8 # Imagem oficial do MySQL versão 8
+    container_name: db # Nome do container  
+    restart: always # Sempre reinicia se falhar
+    environment: #Configuração do ambientet MySQL
+      MYSQL_ROOT_PASSWORD: 1234 # Senha do root
+      MYSQL_DATABASE: escolinha  # Banco criado automaticamente
+      MYSQL_ROOT_HOST: '%'       # Permite conexão de qualquer host (opcional) → Permite conexão remota
     ports:
       - "3306:3306"
-    volumes:
-      - db_data:/var/lib/mysql
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
-    healthcheck:
+    volumes: #Persistência de dados
+      - db_data:/var/lib/mysql # Volume nomeado (persiste dados) Dados do banco persistem mesmo se o container for removido - db_data fica salvo no No Windows (Docker Desktop). qdo inicia ele É um mapeamento (bind) para var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro # Script inicial - vai pegar o arquivo init.sql da pasta local (.): a pasta docker-entrypoint-initdb.d do container vai executar automaticamente todos os arquivos .sql dentro dela, que no caso é init.sql (mapeado) : ro Read-only (somente leitura) o container não consegue modificar o arquivo, só executa.
+    healthcheck: # checar a saúde - Verifica se o MySQL está realmente pronto para aceitar conexões - O app só inicia quando o healthcheck passa
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p1234"]
-      timeout: 20s
-      retries: 10
-      interval: 10s
-      start_period: 30s
+      timeout: 20s  #Tempo máximo para o teste
+      retries: 10 # Tentativas antes de considerar não saudável
+      interval: 10s # Frequência dos testes
+      start_period: 30s # Tempo para o container iniciar antes dos testes
     networks:
       - escolinha_network
     # Remova completamente a seção "command" ou deixe assim:
-    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci # Comando adicional - Configuração extra do MySQL - Define charset UTF-8 para suporte a emojis e caracteres especiais
 
-  phpmyadmin:
+  phpmyadmin: # Serviço 3: Interface gráfica do MySQL
     image: phpmyadmin/phpmyadmin
     container_name: phpmyadmin
     depends_on:
-      - db
+      - db # Aguarda o banco iniciar
     environment:
-      PMA_HOST: db
-      PMA_PORT: 3306
-      UPLOAD_LIMIT: 100M
+      PMA_HOST: db  # Host do MySQL
+      PMA_PORT: 3306 # Porta do MySQL
+      UPLOAD_LIMIT: 100M # Limite de upload
     ports:
-      - "8080:80"
+      - "8080:80" # Acessa em http://localhost:8080
     networks:
       - escolinha_network
     restart: unless-stopped
 
-volumes:
-  db_data:
+volumes: # Volumes para persistir dados
+  db_data: # Volume nomeado para persistir dados do MySQL
 
-networks:
-  escolinha_network:
+networks: # Redes para comunicação entre containers
+  escolinha_network: # Containers se comunicam pelo nome do serviço (ex: db, app)
     driver: bridge
