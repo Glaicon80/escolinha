@@ -1,0 +1,17 @@
+#como o jenkins vai ter que rodar os testes (docker-compose.test.yml), entao vai ser preciso instalar o docker e o docker compose nesse container
+FROM jenkins/jenkins:lts
+
+USER root
+
+# Instalar dependências
+RUN apt-get update && apt-get install -y \
+    docker.io \
+    docker-compose \
+    openssh-client \
+    rsync \
+    && apt-get clean
+
+# Garantir que Jenkins pode usar docker
+RUN usermod -aG docker jenkins
+
+USER jenkins
