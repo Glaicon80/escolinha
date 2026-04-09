@@ -23,7 +23,7 @@ services: # Define os containers (serviços)
     restart: unless-stopped # Política de reinicialização - Não reinicia se você parar manualmente
 
   db: # Serviço 2: Banco de dados MySQL
-    image: mysql:8 # Imagem oficial do MySQL versão 8
+    image: mariadb:10.11  # ← MUDAR: versão compatível com ARM64 pq causa da rapsberry pi 3
     container_name: db # Nome do container  
     restart: always # Sempre reinicia se falhar
     environment: #Configuração do ambientet MySQL
@@ -31,7 +31,7 @@ services: # Define os containers (serviços)
       MYSQL_DATABASE: escolinha  # Banco criado automaticamente
       MYSQL_ROOT_HOST: '%'       # Permite conexão de qualquer host (opcional) → Permite conexão remota
     ports:
-      - "3306:3306"
+      - "3307:3306"
     volumes: #Persistência de dados
       - db_data:/var/lib/mysql # Volume nomeado (persiste dados) Dados do banco persistem mesmo se o container for removido - db_data fica salvo no No Windows (Docker Desktop). qdo inicia ele É um mapeamento (bind) para var/lib/mysql
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro # Script inicial - vai pegar o arquivo init.sql da pasta local (.): a pasta docker-entrypoint-initdb.d do container vai executar automaticamente todos os arquivos .sql dentro dela, que no caso é init.sql (mapeado) : ro Read-only (somente leitura) o container não consegue modificar o arquivo, só executa.
@@ -47,7 +47,7 @@ services: # Define os containers (serviços)
     command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci # Comando adicional - Configuração extra do MySQL - Define charset UTF-8 para suporte a emojis e caracteres especiais
 
   phpmyadmin: # Serviço 3: Interface gráfica do MySQL
-    image: phpmyadmin/phpmyadmin
+    image: phpmyadmin:5.2
     container_name: phpmyadmin
     depends_on:
       - db # Aguarda o banco iniciar

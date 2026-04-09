@@ -1,0 +1,98 @@
+services:
+  app:
+    build: .
+    container_name: escolinha-app
+    ports:
+      - "3000:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - DB_HOST=db
+      - DB_USER=root
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=escolinha
+      - NODE_ENV=production # Ambiente de desenvolvimento não vai instalar os devDependencies do package.json e o express vai ficar mais restrito
+      - SESSION_SECRET=${SESSION_SECRET}
+    volumes:
+      - app_logs:/app/logs
+    networks:
+      - escolinha_network
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy: # limites maximos de consumo do servidor 
+      resources:
+        limits:
+          cpus: '0.5' # Máximo de 50% de 1 CPU
+          memory: 512M # Máximo de 512 Megabytes de RAM
+        reservations: #O Docker garante que o container terá pelo menos
+          cpus: '0.25' # Garantia de 25% de 1 CPU
+          memory: 256M # Garantia de 256 Megabytes de RAM
+
+  db:
+    image: mariadb:10.11
+    container_name: escolinha-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: escolinha
+      MYSQL_ROOT_HOST: '%'
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_PASSWORD}"]
+      timeout: 20s
+      retries: 10
+      interval: 10s
+      start_period: 30s
+    networks:
+      - escolinha_network
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    deploy:
+      resources:
+        limits:
+          cpus: '0.75'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+  phpmyadmin:
+    image: phpmyadmin:5.2
+    container_name: escolinha-phpmyadmin
+    depends_on:
+      - db
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      PMA_ARBITRARY: 1
+      UPLOAD_LIMIT: 100M
+    ports:
+      - "8080:80"
+    networks:
+      - escolinha_network
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 256M
+
+volumes:
+  db_data:
+    name: escolinha_db_data
+  app_logs:
+    name: escolinha_app_logs
+
+networks:
+  escolinha_network:
+    name: escolinha_network
+    driver: bridge
