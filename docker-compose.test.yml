@@ -33,9 +33,6 @@ services:
       - DB_PASSWORD=1234
       - DB_NAME=escolinha_test # ← Banco de TESTE
       - NODE_ENV=test # ← Modo teste
-    volumes:
-      - .:/app # (bind mount para código fonte)
-      - /app/node_modules # (volume anônimo)
     command: npm test # depois que o container iniciar vai executar o Comando que RODA OS TESTES - lê package.json e executa: jest --runInBand
 
 volumes:
