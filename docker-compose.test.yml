@@ -10,7 +10,7 @@ services:
       MYSQL_DATABASE: escolinha_test # ← cria Banco de TESTE 
       MYSQL_ROOT_HOST: '%'
     ports:
-      - "3307:3306" # ← Porta DIFERENTE (3307) para não conflitar - Mapeia porta 3307 do host → 3306 do container
+      - "3308:3306" # ← Porta DIFERENTE (3307) para não conflitar - Mapeia porta 3307 do host → 3306 do container
     volumes:
       - db_test_data:/var/lib/mysql
     healthcheck: # Healthcheck começa a verificar a saldo - Quando healthcheck passa, MySQL está pronto!
