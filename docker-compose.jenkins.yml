@@ -8,12 +8,14 @@ services:
     container_name: jenkins
     restart: always
     ports:
-      - "8080:8080"
+      - "8081:8080"
       - "50000:50000"
     volumes:
       - jenkins_home:/var/jenkins_home
       - /var/run/docker.sock:/var/run/docker.sock
+      - jenkins_ssh:/root/.ssh
     user: root
 
 volumes:
   jenkins_home:
+  jenkins_ssh:
