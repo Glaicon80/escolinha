@@ -56,7 +56,7 @@ services: # Define os containers (serviços)
       PMA_PORT: 3306 # Porta do MySQL
       UPLOAD_LIMIT: 100M # Limite de upload
     ports:
-      - "8080:80" # Acessa em http://localhost:8080
+      - "8081:80" # Acessa em http://localhost:8080
     networks:
       - escolinha_network
     restart: unless-stopped
